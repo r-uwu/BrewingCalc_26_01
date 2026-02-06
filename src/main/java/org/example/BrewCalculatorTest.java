@@ -34,18 +34,19 @@ class BrewCalculatorTest {
         BrewCalculator calculator = new BrewCalculator();
         double actualOg = calculator.calculateOG(recipe);
         double calculateIbu = calculator.calculateIBU(recipe);
+        double srm = calculator.calculateSRM(recipe);
 
         System.out.println("====== 종합 레시피 ======");
         recipe.getGrainItems().forEach(m -> System.out.println("몰트: " + m.grain().name() + " " + m.weightKg() + "kg efficiency "+recipe.getEfficiency()));
         recipe.getHopItems().forEach(h -> System.out.println("홉: " + h.hop().name() + " " + h.amountGrams() + "g (" + h.boilTimeMinutes() + "min)"));
 
-        System.out.println("og : " + actualOg);
-        System.out.printf("Ibu : %.2f IBUs\n", calculateIbu);
+        System.out.println("\nog : " + actualOg);
+        System.out.printf("IBUs : %.2f IBUs\n", calculateIbu);
+        System.out.printf("SRM : %.1f SRM\n", srm);
         System.out.println("==========================");
 
 
         //테스트는 일단 하지 않는걸로
         //assertEquals(1.00666, actualOg, 0.0001);
     }
-
 }

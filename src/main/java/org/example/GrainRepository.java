@@ -13,11 +13,15 @@ public class GrainRepository {
     }
 
     private void initData() {
-        maltDb.put("Pilsner", new Grain("Pilsner", 1.037));
-        maltDb.put("Vienna", new Grain("Vienna", 1.035));
-        maltDb.put("Munich", new Grain("Munich", 1.037));
-        maltDb.put("Roasted Barley", new Grain("Roasted Barley", 1.025));
-        maltDb.put("Pale Ale", new Grain("Pale Ale", 1.038));
+
+
+
+
+        maltDb.put("Pilsner", new Grain("Pilsner", 1.037, 2.0));
+        maltDb.put("Vienna", new Grain("Vienna", 1.035, 4.0));
+        maltDb.put("Munich", new Grain("Munich", 1.037, 9.0));
+        maltDb.put("Roasted Barley", new Grain("Roasted Barley", 1.025, 300));
+        maltDb.put("Pale Ale", new Grain("Pale Ale", 1.038, 2.0));
     }
 
     public Grain findByName(String name) {

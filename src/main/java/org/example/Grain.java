@@ -4,7 +4,7 @@ package org.example;
  * @param name 이름
  * @param potential 잠재 비중
  */
-public record Grain(String name, double potential) {
+public record Grain(String name, double potential, double lovibond) {
 }
 
 

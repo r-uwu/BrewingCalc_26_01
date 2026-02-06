@@ -37,6 +37,27 @@ public class BrewCalculator {
         return totalIbu;
 }
 
+    public double calculateSRM(Recipe recipe) {
+        double mcu = 0;
+
+        // 단위 변환 상수
+        final double KG_TO_LBS = 2.20462;
+        final double LITER_TO_GALLONS = 0.264172;
+
+        double batchSizeGallons = recipe.getBatchSizeLiters() * LITER_TO_GALLONS;
+
+        for (GrainItem item : recipe.getGrainItems()) {
+            double weightLbs = item.weightKg() * KG_TO_LBS;
+            // MCU = (무게_lbs * 색도_L) / 부피_gallons
+            mcu += (weightLbs * item.grain().lovibond()) / batchSizeGallons;
+        }
+
+        // Morey 공식: SRM = 1.4922 * (MCU ^ 0.6859)
+        // MCU가 너무 낮으면 공식 특성상 오류가 날 수 있으므로 방어 코드를 넣습니다.
+        if (mcu <= 0) return 0;
+        return 1.4922 * Math.pow(mcu, 0.6859);
+    }
+
     private double calculateUtilization(int minutes, double currentOG) {
         if (minutes <= 0) return 0.0;
 
@@ -50,4 +71,5 @@ public class BrewCalculator {
 
         return bignessFactor * boilTimeFactor;
     }
+
 }
