@@ -12,11 +12,11 @@ public class HopRepository {
 
     private void initData() {
 
-        hopDb.put("Saaz", new Hop("Saaz", 3.5));         // 주로 라거용, 낮은 알파산
-        hopDb.put("Cascade", new Hop("Cascade", 7.0));   // 미국 에일용, 자몽 향
-        hopDb.put("Citra", new Hop("Citra", 12.0));     // 강력한 열대과일 향
-        hopDb.put("Magnum", new Hop("Magnum", 14.0));   // 비터링(쓴맛) 전용
-        hopDb.put("Galaxy", new Hop("Galaxy", 14.5));   // 호주산, 아주 높은 알파산
+        hopDb.put("Saaz", new Hop("Saaz", 3.5));         // 라거 홉
+        hopDb.put("Cascade", new Hop("Cascade", 7.0));   // 아로마 홉(미국) 자몽
+        hopDb.put("Citra", new Hop("Citra", 12.0));     // 아로마 홉(미국) 시트러스
+        hopDb.put("Magnum", new Hop("Magnum", 14.0));   // 비터 홉
+        hopDb.put("Galaxy", new Hop("Galaxy", 14.5));   // 호주산
 
     }
 

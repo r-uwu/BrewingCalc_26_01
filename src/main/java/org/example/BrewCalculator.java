@@ -58,18 +58,85 @@ public class BrewCalculator {
         return 1.4922 * Math.pow(mcu, 0.6859);
     }
 
+    public double calculateFG(Recipe recipe, double fermentTemp) {
+        double og = calculateOG(recipe);
+        Yeast yeast = recipe.getYeastItem().yeast();
+
+        // 온도 민감도에 따른 실제 감쇄율 보정
+        double stress = calculateYeastStress(yeast, fermentTemp);
+        double actualAttenuation = yeast.attenuation() - (stress * yeast.sensitivityFactor());
+
+        // 공식: $FG = 1 + ((OG - 1) * (1 - Attenuation))$
+        return 1 + ((og - 1) * (1 - actualAttenuation));
+    }
+
+
+    public double calculateABV(double og, double fg) {
+        // 공식: $ABV = (OG - FG) * 131.25$
+        return (og - fg) * 131.25;
+    }
+
+
+
+
     private double calculateUtilization(int minutes, double currentOG) {
         if (minutes <= 0) return 0.0;
 
-        // Bigness Factor
-        // 맥즙이 진할수록 이용률 감소
+        // og높으면 이용률 감소
         double bignessFactor = 1.65 * Math.pow(0.000125, currentOG - 1);
-
-        // Boil Time Factor
+        
         // 보일링 타임에 따라 증가 (Tinseth 상수 0.04 사용)
         double boilTimeFactor = (1 - Math.exp(-0.04 * minutes)) / 4.15;
 
         return bignessFactor * boilTimeFactor;
+    }
+
+    private double calculateYeastStress(Yeast yeast, double temp) {
+        if (temp >= yeast.minTemp() && temp <= yeast.maxTemp()) return 0.0;
+        return (temp < yeast.minTemp()) ? (yeast.minTemp() - temp) : (temp - yeast.maxTemp());
+    }
+
+
+
+
+    public FlavorProfile predictFlavorProfile(Recipe recipe, double fermentTemp) {
+        Yeast yeast = recipe.getYeastItem().yeast();
+
+        //기전 - 활동 권장 온도 내에서의 위치를 백분율로 계산하여 에스테르 수치 정하게
+        double esterScore = calculateEsterScore(yeast, fermentTemp);
+
+        // 디아세틸 생성 / 특히 라거 효모이거나 온도가 너무 낮을 때 위험도가 상승합니다.
+        double diacetylRisk = calculateDiacetylRisk(yeast, fermentTemp);
+
+        return new FlavorProfile(esterScore, diacetylRisk);
+    }
+
+    private double calculateEsterScore(Yeast yeast, double temp) {
+        //에스테르 생성 거의 없음
+        if (temp < yeast.minTemp()) return 5.0;
+
+        double range = yeast.maxTemp() - yeast.minTemp();
+        double position = (temp - yeast.minTemp()) / range;
+
+        // 공식: (온도 위치 * 100) * 민감도 가중치
+        // 온도가 maxTemp를 넘어가면 수치가 100을 초과하게 설계 (과도한 에스테르)
+        return Math.max(0, position * 100 * (1 + yeast.sensitivityFactor()));
+    }
+
+    private double calculateDiacetylRisk(Yeast yeast, double temp) {
+        double risk = 0;
+
+        if (yeast.type() == YeastType.LAGER && temp < yeast.minTemp() + 2) {
+            risk += 40;
+        }
+
+        // 효모 스트레스
+        if (temp < yeast.minTemp() || temp > yeast.maxTemp()) {
+            double deviation = Math.abs(temp - ((yeast.minTemp() + yeast.maxTemp()) / 2));
+            risk += deviation * yeast.sensitivityFactor() * 10;
+        }
+
+        return Math.min(100, risk);
     }
 
 }

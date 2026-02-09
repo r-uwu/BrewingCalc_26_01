@@ -11,6 +11,8 @@ public class Recipe {
     private final double batchSizeLiters;
     private final double efficiency;
 
+    private YeastItem yeastItem;
+
     public Recipe(double batchSizeLiters, double efficiency) {
         this.batchSizeLiters = batchSizeLiters;
         this.efficiency = efficiency;
@@ -28,9 +30,13 @@ public class Recipe {
     }
 
 
-    // 게터 메서드들
     public List<GrainItem> getGrainItems() { return grainItems; }
     public List<HopItem> getHopItems() { return hopItems; }
+    public YeastItem getYeastItem() { return yeastItem; }
     public double getBatchSizeLiters() { return batchSizeLiters; }
     public double getEfficiency() { return efficiency; }
+
+    public void addYeast(Yeast yeast, double amount){
+        this.yeastItem = new YeastItem(yeast, amount, true, 0, false);
+    }
 }
