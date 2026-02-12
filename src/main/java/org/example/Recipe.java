@@ -22,9 +22,6 @@ public class Recipe {
         this.grainItems.add(new GrainItem(grain, weightKg));
     }
 
-    // 레시피에 들어가는 홉의 양과 시간을 기록하는 record
-    public record HopItem(Hop hop, double amountGrams, int boilTimeMinutes) {}
-
     public void addHop(Hop hop, double amountGrams, int boilTimeMinutes) {
         this.hopItems.add(new HopItem(hop, amountGrams, boilTimeMinutes));
     }
@@ -36,7 +33,11 @@ public class Recipe {
     public double getBatchSizeLiters() { return batchSizeLiters; }
     public double getEfficiency() { return efficiency; }
 
-    public void addYeast(Yeast yeast, double amount){
-        this.yeastItem = new YeastItem(yeast, amount, true, 0, false);
+//    public void addYeast(Yeast yeast, double amount){
+//        this.yeastItem = new YeastItem(yeast, amount, true, 3, 3,false);
+//    }
+
+    public void setYeastItem(YeastItem yeastItem) {
+        this.yeastItem = yeastItem;
     }
 }

@@ -1,6 +1,7 @@
 package org.example;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class HopRepository {
@@ -12,11 +13,11 @@ public class HopRepository {
 
     private void initData() {
 
-        hopDb.put("Saaz", new Hop("Saaz", 3.5));         // 라거 홉
-        hopDb.put("Cascade", new Hop("Cascade", 7.0));   // 아로마 홉(미국) 자몽
-        hopDb.put("Citra", new Hop("Citra", 12.0));     // 아로마 홉(미국) 시트러스
-        hopDb.put("Magnum", new Hop("Magnum", 14.0));   // 비터 홉
-        hopDb.put("Galaxy", new Hop("Galaxy", 14.5));   // 호주산
+        hopDb.put("Saaz", new Hop("Saaz", 3.5, List.of("Noble, herbal character")));         // 라거 홉
+        hopDb.put("Cascade", new Hop("Cascade", 7.0, List.of("Floral", "elements of citrus","notes of grapefruit")));   // 아로마 홉(미국) 자몽
+        hopDb.put("Citra", new Hop("Citra", 12.0, List.of("Citrus, grapefruit, lime, tropical fruits, harsh bitterness")));     // 아로마 홉(미국) 시트러스
+        hopDb.put("Magnum", new Hop("Magnum", 14.0, List.of("Clean bittering, light citrus flavor")));   // 비터 홉
+        hopDb.put("Galaxy", new Hop("Galaxy", 14.5, List.of("Citrus","peach","passionfruit")));   // 호주산
 
     }
 
