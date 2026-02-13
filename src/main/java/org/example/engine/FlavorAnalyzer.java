@@ -25,17 +25,17 @@ public class FlavorAnalyzer {
         Yeast yeast = recipe.getYeastItem().yeast();
         List<String> tags = new ArrayList<>();
 
-        analyzeBalance(og, ibu, tags);
-
-        analyzeIngredientIntensity(recipe, tags);
-
-        analyzeOffFlavors(recipe, yeast, fermentTemp, tags);
-
-        analyzeYeastCharacter(yeast, fermentTemp, tags);
-
         //태그용 스코어
         double esterScore = calculateEsterScore(yeast, fermentTemp);
         double diacetylRisk = calculateDiacetylRisk(yeast, fermentTemp);
+
+        analyzeBalance(og, ibu, tags);
+        analyzeIngredientIntensity(recipe, tags);
+
+
+        analyzeOffFlavors(recipe, yeast, fermentTemp, diacetylRisk, tags);
+        analyzeYeastCharacter(yeast, fermentTemp, esterScore, tags);
+
 
         return new FlavorProfile(esterScore, diacetylRisk, tags.stream().distinct().toList());
     }
@@ -105,15 +105,15 @@ public class FlavorAnalyzer {
      * [New] 이취(Off-Flavor) 위험 분석
      * 공정 실수나 재료 조합 오류로 인한 오프플레이버에 대한 예측
      */
-    private void analyzeOffFlavors(Recipe recipe, Yeast yeast, double temp, List<String> tags) {
-        // 1. 퓨젤 알코올 (Fusel Alcohol) - 꽃향기 같으면서도 아세톤/벤젠 냄새
+    private void analyzeOffFlavors(Recipe recipe, Yeast yeast, double temp, double diacetylRisk, List<String> tags) {
+        // 퓨젤 알코올 (Fusel Alcohol) - 꽃향기 같으면서도 아세톤/벤젠 냄새
         // 발효 온도가 효모 권장 온도보다 훨씬 높을 때 발생 / 혹은 질소 과다
         // 초반 발효 유의
         if (temp > yeast.maxTemp() + 4.0) {
             tags.add("⚠\uFE0F Fusel Alcohol");
         }
 
-        // 2. DMS (Dimethyl Sulfide) - 삶은 옥수수/야채 냄새
+        // DMS (Dimethyl Sulfide) - 삶은 옥수수/야채 냄새
         // 필스너 몰트를 사용했는데 끓임 시간이 짧을 경우 발생 (SMM -> DMS 휘발 부족)
         // 아니면 양조 과정 중 생성되거나 발효시 박테리아 감염으로도 디세틸 설파이트 발생. 맥락은 위에랑 같음
         // 보리에서 생성되는 이취로 밝은 보리나 덜 가공된 맥아에서 많이 발생
@@ -129,10 +129,15 @@ public class FlavorAnalyzer {
             //tags.addAll(List.of("Off-Flavor: Cooked Corn (DMS Risk)","리스트 태그 테스트1"));
         }
 
-        // 3. 아세트알데히드 (Acetaldehyde) - 풋사과, 아세톤 등
+        // 아세트알데히드 (Acetaldehyde) - 풋사과, 아세톤 등
         // 발효 온도가 너무 낮아 효모 활동이 조기 종료되거나, 피칭량이 부족할 때 (여기선 온도만 체크)
         if (temp < yeast.minTemp() - 2.0) {
             tags.add("⚠\uFE0F Green Apple (Acetaldehyde)");
+        }
+
+        // 디아세틸 과다 경고
+        if (diacetylRisk > 75) {
+            tags.add("⚠\uFE0F Buttery (Diacetyl)");
         }
 
         /**
@@ -157,8 +162,8 @@ public class FlavorAnalyzer {
          */
     }
 
-    private void analyzeYeastCharacter(Yeast yeast, double temp, List<String> tags) {
-        double ester = calculateEsterScore(yeast, temp);
+    private void analyzeYeastCharacter(Yeast yeast, double temp, double ester, List<String> tags) {
+        //double ester = calculateEsterScore(yeast, temp);
 
         if (yeast.type() == YeastType.LAGER) {
             if (temp > 18.0) tags.add("Steam Beer Character"); // 캘리포니아 커먼 등
