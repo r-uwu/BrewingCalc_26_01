@@ -34,7 +34,7 @@ public class GrainRepository {
         maltDb.put("Biscuit", new Grain("Biscuit", 1.295, 50.0));
 
         // --- 결정화 몰트 (Crystal/Caramel) ---
-        // 크리스탈 40: 꿀, 캐러멜 향
+        // 크리스탈 40: 꿀 캐러멜 향
         maltDb.put("Crystal 40", new Grain("Crystal 40", 1.285, 80.0));
         // 크리스탈 120: 어두운 과일, 진한 토피 향
         maltDb.put("Crystal 120", new Grain("Crystal 120", 1.275, 240.0));

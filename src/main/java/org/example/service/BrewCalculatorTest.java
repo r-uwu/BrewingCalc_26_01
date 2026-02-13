@@ -162,7 +162,6 @@ class BrewCalculatorTest {
                 70.0, 12.0
         );
 
-
     }
 
 
@@ -182,7 +181,8 @@ class BrewCalculatorTest {
         double fg = calculator.calculateFG(recipe, fermentTemp, mashTemp);
         double abv = calculator.calculateABV(og, fg);
         FlavorProfile flavor = calculator.predictFlavorProfile(recipe, fermentTemp);
-        List<String> tags = tagAnalyzer.analyze(recipe, flavor.esterScore(), flavor.diacetylRisk());
+        //List<String> tags = tagAnalyzer.analyze(recipe, flavor.esterScore(), flavor.diacetylRisk());
+        List<String> tags = flavor.flavorTags();
 
         System.out.println("\n" + "=".repeat(15) + " " + title + " " + "=".repeat(15));
         System.out.printf("[설정조건]    BatchSize: %.1fL | Mash: %.1f°C | Ferment: %.1f°C | Yeast Age: %d months\n",

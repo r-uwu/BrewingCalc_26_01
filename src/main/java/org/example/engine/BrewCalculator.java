@@ -36,7 +36,11 @@ public class BrewCalculator {
     }
 
     public FlavorProfile predictFlavorProfile(Recipe recipe, double fermentTemp) {
-        return flavorAnalyzer.predictFlavorProfile(recipe, fermentTemp);
+
+        double og = densityEngine.calculateOG(recipe);
+        double ibu = sensoryEngine.calculateIBU(recipe, og);
+
+        return flavorAnalyzer.analyze(recipe, og, ibu, fermentTemp);
     }
 
 }
