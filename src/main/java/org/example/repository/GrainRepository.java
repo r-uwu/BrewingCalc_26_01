@@ -1,8 +1,9 @@
-package org.example;
+package org.example.repository;
+
+import org.example.domain.Grain;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 public class GrainRepository {
     private final Map<String, Grain> maltDb = new HashMap<>();

@@ -1,5 +1,8 @@
-package org.example;
+package org.example.domain;
 
+
+import org.example.domain.enums.YeastForm;
+import org.example.domain.enums.YeastType;
 
 /**
  * @param name

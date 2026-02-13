@@ -1,5 +1,13 @@
-package org.example;
+package org.example.service;
 
+import org.example.domain.FlavorProfile;
+import org.example.domain.Recipe;
+import org.example.domain.YeastItem;
+import org.example.engine.BrewCalculator;
+import org.example.engine.FlavorAnalyzer;
+import org.example.repository.GrainRepository;
+import org.example.repository.HopRepository;
+import org.example.repository.YeastRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,7 +23,7 @@ class BrewCalculatorTest {
     private HopRepository hopRepo;
     private YeastRepository yeastRepo;
     private BrewCalculator calculator;
-    private FlavorTagAnalyzer tagAnalyzer;
+    private FlavorAnalyzer tagAnalyzer;
 
     /*
     @Test
@@ -92,7 +100,7 @@ class BrewCalculatorTest {
         hopRepo = new HopRepository();
         yeastRepo = new YeastRepository();
         calculator = new BrewCalculator();
-        tagAnalyzer = new FlavorTagAnalyzer();
+        tagAnalyzer = new FlavorAnalyzer();
     }
 
     @Test

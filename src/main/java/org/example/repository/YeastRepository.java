@@ -1,4 +1,8 @@
-package org.example;
+package org.example.repository;
+
+import org.example.domain.Yeast;
+import org.example.domain.enums.YeastForm;
+import org.example.domain.enums.YeastType;
 
 import java.util.HashMap;
 import java.util.Map;

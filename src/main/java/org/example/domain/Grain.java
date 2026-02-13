@@ -1,4 +1,4 @@
-package org.example;
+package org.example.domain;
 
 /** 몰트 원재료
  * @param name 이름

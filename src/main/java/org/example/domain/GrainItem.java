@@ -1,4 +1,4 @@
-package org.example;
+package org.example.domain;
 
 /** 몰트 레시티 구성 정보용
  * @param grain 곡물 정보

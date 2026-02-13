@@ -1,4 +1,4 @@
-package org.example;
+package org.example.domain.enums;
 
 public enum YeastForm {
     LIQUID, DRY, SLANT, CULTURE
