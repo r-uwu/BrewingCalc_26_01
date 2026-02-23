@@ -4,6 +4,7 @@ import org.example.domain.FlavorProfile;
 import org.example.domain.Recipe;
 import org.example.domain.Yeast;
 import org.example.engine.*;
+import org.example.simulation.DryHopAddition;
 import org.example.simulation.SimulationLog;
 import org.example.simulation.TemperatureSchedule;
 
@@ -20,7 +21,8 @@ public class BrewingSimulator {
     /**
      * 시뮬레이션 메인 메서드
      */
-    public List<SimulationLog> simulate(Recipe recipe, TemperatureSchedule tempSchedule, int durationDays) {
+    public List<SimulationLog> simulate(Recipe recipe, TemperatureSchedule tempSchedule,
+                                        List<DryHopAddition> dryHopAdditions, int durationDays) {
         List<SimulationLog> logs = new ArrayList<>();
         int totalHours = durationDays * 24;
 
@@ -38,11 +40,31 @@ public class BrewingSimulator {
         FlavorProfile lastProfile = null;
         String phase = "Lag Phase";
 
+        List<String> dryHopTags = new ArrayList<>();
+
         for (int hour = 0; hour <= totalHours; hour++) {
             double currentTemp = tempSchedule.getTempAt(hour);
 
             // 비중
             double drop = calculateHourlyDrop(hour, currentGravity, targetFG, currentTemp, recipe.getYeastItem().yeast());
+
+            // 드라이호핑
+            for(DryHopAddition dryHopAddition : dryHopAdditions){
+                if(dryHopAddition.hour() == hour)
+                {
+                    logs.add(new SimulationLog(
+                            hour, currentTemp, currentGravity,
+                            fermentationEngine.calculateABV(startOG, currentGravity),
+                            //"Event: Dry Hop Added",
+                            "Hop Addition: " + dryHopAddition.hop().name(),
+                            List.of("+" + dryHopAddition.amountGrams() + "g added"),
+                            0, 0
+                    ));
+
+                    dryHopTags.addAll(dryHopAddition.hop().flavorTags());
+
+                }
+            }
 
             if (drop < 0) drop = 0;
 
@@ -55,17 +77,25 @@ public class BrewingSimulator {
 
             double currentABV = fermentationEngine.calculateABV(startOG, currentGravity);
 
-            phase = determinePhase(hour, currentGravity, startOG, targetFG, currentTemp);
+            //phase = determinePhase(hour, currentGravity, startOG, targetFG, currentTemp);
+
+            phase = determinePhase(hour, currentGravity, startOG, targetFG, tempSchedule.getTempAt(hour));
 
             // flavor 분석
+
             if (hour == 0 || hour % 24 == 0 || hour == totalHours) {
                 lastProfile = calculator.predictFlavorProfile(recipe, currentTemp);
             }
 
             if (lastProfile != null) {
+                List<String> combinedTags = new ArrayList<>(lastProfile.flavorTags());
+                combinedTags.addAll(dryHopTags);
+
+
                 logs.add(new SimulationLog(
                         hour, currentTemp, currentGravity, currentABV, phase,
-                        lastProfile.flavorTags(), lastProfile.esterScore(), lastProfile.diacetylRisk()
+                        combinedTags.stream().distinct().toList(),
+                        lastProfile.esterScore(), lastProfile.diacetylRisk()
                 ));
             }
             
@@ -148,4 +178,10 @@ public class BrewingSimulator {
         }
         return "Fermenting";
     }
+
+    public List<SimulationLog> simulate(Recipe recipe, TemperatureSchedule tempSchedule, int durationDays) {
+        // 드라이 호핑 리스트 자리에 빈 리스트(new ArrayList<>())를 넣어서 진짜 simulate 메서드를 호출합니다.
+        return simulate(recipe, tempSchedule, new ArrayList<>(), durationDays);
+    }
 }
+

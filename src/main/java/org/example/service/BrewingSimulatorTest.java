@@ -7,12 +7,14 @@ import org.example.engine.BrewCalculator;
 import org.example.repository.GrainRepository;
 import org.example.repository.HopRepository;
 import org.example.repository.YeastRepository;
+import org.example.simulation.DryHopAddition;
 import org.example.simulation.SimulationLog;
 import org.example.simulation.TemperatureSchedule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -72,7 +74,42 @@ class BrewingSimulatorTest {
         runSimulationAndPrint(recipe, schedule, 21);
     }
 
-    // --- Helper Methods ---
+    @Test
+    @DisplayName("시나리오 4: DDH NEIPA (Double Dry Hopped Hazy IPA)")
+    void testDDH_NEIPA() {
+
+        Recipe recipe = new Recipe(20.0, 0.70);
+
+        recipe.addMalt(grainRepo.findByName("Pilsner"), 4.0);
+        recipe.addMalt(grainRepo.findByName("Wheat"), 1.0);
+
+        recipe.addMalt(grainRepo.findByName("Oats"), 1.0);
+
+        recipe.addHop(hopRepo.findByName("Magnum"), 5, 60);
+
+        recipe.addHop(hopRepo.findByName("Citra"), 20, 0);
+
+        recipe.setYeastItem(new YeastItem(yeastRepo.findByName("US-05"), 11.5, true, 0, 0, false));
+
+        TemperatureSchedule schedule = new TemperatureSchedule(20.0);
+        schedule.addStep(240, 15.0);
+
+        List<DryHopAddition> dryHopAdditions = new ArrayList<>();
+
+        //발효가 가장 왕성할 때 Biotransformation 유도
+        dryHopAdditions.add(new DryHopAddition(48, hopRepo.findByName("Citra"), 50));
+        dryHopAdditions.add(new DryHopAddition(48, hopRepo.findByName("Mosaic"), 50));
+
+
+        dryHopAdditions.add(new DryHopAddition(168, hopRepo.findByName("Galaxy"), 50));
+        dryHopAdditions.add(new DryHopAddition(168, hopRepo.findByName("Cascade"), 50));
+
+        System.out.println("\n=== 시나리오 4 DDH NEIPA ===");
+
+        List<SimulationLog> logs = simulator.simulate(recipe, schedule, dryHopAdditions, 14);
+
+        runSimulationAndPrint(recipe, schedule, dryHopAdditions, 14);
+    }
 
     /*
     private void runSimulationAndPrint(Recipe recipe, TemperatureSchedule schedule, int durationDays) {
@@ -83,11 +120,17 @@ class BrewingSimulatorTest {
      */
 
     private void runSimulationAndPrint(Recipe recipe, TemperatureSchedule schedule, int durationDays) {
+        runSimulationAndPrint(recipe, schedule, new ArrayList<>(), durationDays);
+    }
+
+    private void runSimulationAndPrint(Recipe recipe, TemperatureSchedule schedule, List<DryHopAddition> dryHopAdditions, int durationDays) {
 
         double og = calculator.calculateOG(recipe);
         double ibu = calculator.calculateIBU(recipe);
         double srm = calculator.calculateSRM(recipe);
-        List<SimulationLog> logs = simulator.simulate(recipe, schedule, durationDays);
+        //List<SimulationLog> logs = simulator.simulate(recipe, schedule, durationDays);
+
+        List<SimulationLog> logs = simulator.simulate(recipe, schedule, dryHopAdditions, durationDays);
 
         // 1. [Recipe Overview]
         System.out.println("\n" + "=".repeat(35) + " RECIPE OVERVIEW " + "=".repeat(35));
@@ -101,6 +144,12 @@ class BrewingSimulatorTest {
         recipe.getHopItems().forEach(h -> System.out.printf(" - %-20s : %.1f g (%d min)\n",
                 h.hop().name(), h.amountGrams(), h.boilTimeMinutes()));
 
+//        if (!dryHopAdditions.isEmpty()) {
+//            System.out.println("\n[Hops (Dry Hopping)]");
+//            dryHopAdditions.forEach(dh -> System.out.printf(" - %-20s : %.1f g (at %d h)\n",
+//                    dh.hop().name(), dh.amountGrams(), dh.hour()));
+//        }
+
         System.out.println("\n[Yeast]");
         System.out.printf(" - %-20s : %.1f g (%s)\n",
                 recipe.getYeastItem().yeast().name(), recipe.getYeastItem().amount(), recipe.getYeastItem().yeast().type());
@@ -110,8 +159,11 @@ class BrewingSimulatorTest {
 
         // 2. [Brewhouse & Fermentation Logs]
         System.out.println("\n" + "-".repeat(90));
-        System.out.println(String.format("%-14s | %-7s | %-7s | %-5s | %-25s | %-25s",
+//        System.out.println(String.format("%-14s | %-7s | %-7s | %-5s | %-25s | %-25s",
+//                "Timeline", "Temp", "Gravity", "ABV", "Phase/Event", "Flavor Tags"));
+        System.out.println(String.format("%-14s | %-7s | %-7s | %-5s | %-25s | %s",
                 "Timeline", "Temp", "Gravity", "ABV", "Phase/Event", "Flavor Tags"));
+
         System.out.println("-".repeat(90));
 
         for (SimulationLog log : logs) {
@@ -124,9 +176,16 @@ class BrewingSimulatorTest {
                 String timeLabel = (log.hour() < 0) ? "Day - " + Math.abs(log.hour()) + "m" : "Day " + (log.hour()/24 + 1) + " (" + log.hour() + "h)";
                 if (log.hour() == 0) timeLabel = "Pitching";
 
+                /*
                 System.out.println(String.format("%-14s | %5.1f°C | %7.4f | %4.1f%% | %-25s | %-25s",
                         timeLabel, log.temperature(), log.gravity(), log.abv(),
                         log.phase(), shortenTags(String.join(", ", log.flavorTags()))));
+
+
+                 */
+                System.out.println(String.format("%-14s | %5.1f°C | %7.4f | %4.1f%% | %-25s | %-25s",
+                        timeLabel, log.temperature(), log.gravity(), log.abv(),
+                        log.phase(), String.join(", ", log.flavorTags())));
 
                 if (log.hour() == 0) System.out.println("-".repeat(90)); // 발효 시작 구분선
             }
@@ -144,10 +203,13 @@ class BrewingSimulatorTest {
         return !prevPhase.equals(current.phase());
     }
 
+    /*
     private String shortenTags(String tags) {
         if (tags.length() > 25) return tags.substring(0, 22) + "...";
         return tags;
     }
+
+     */
 
     private Recipe createRecipe(double size, String grain, double grainKg, String hop, int hopG, String yeast, double yeastG) {
         Recipe recipe = new Recipe(size, 0.72);

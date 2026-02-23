@@ -39,11 +39,15 @@ public class GrainRepository {
         // 크리스탈 120: 어두운 과일, 진한 토피 향
         maltDb.put("Crystal 120", new Grain("Crystal 120", 1.275, 240.0));
 
+
         // --- 로스팅 몰트 (Roasted Malts) ---
         // 초콜릿 몰트: 초콜릿, 커피 향 (스타우트/포터용)
         maltDb.put("Chocolate", new Grain("Chocolate", 1.240, 900.0));
         // 로스티드 발리: 탄 맛과 짙은 검은색, 스타우트의 핵심
         maltDb.put("Roasted Barley", new Grain("Roasted Barley", 1.210, 1100.0));
+
+        maltDb.put("Oats", new Grain("Flaked Oats", 1.280, 2.0));
+        maltDb.put("Wheat", new Grain("Wheat", 1.310, 3.0));
 
     }
 
