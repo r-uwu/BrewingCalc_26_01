@@ -4,6 +4,7 @@ import org.example.domain.*;
 import org.example.domain.enums.YeastForm;
 import org.example.domain.enums.YeastType;
 import org.example.engine.BrewCalculator;
+import org.example.engine.FermentationEngine;
 import org.example.repository.GrainRepository;
 import org.example.repository.HopRepository;
 import org.example.repository.YeastRepository;
@@ -71,7 +72,7 @@ class BrewingSimulatorTest {
         schedule.addStep(336, 15.0);
 
         System.out.println("\n=== 호피한 West Coast IPA (21 Days) ===");
-        runSimulationAndPrint(recipe, schedule, 21);
+        runSimulationAndPrint(recipe, schedule, 40);
     }
 
     @Test
@@ -157,7 +158,48 @@ class BrewingSimulatorTest {
         System.out.println("\n[Design Targets]");
         System.out.printf(" OG: %.4f  |  IBU: %.1f  |  SRM: %.1f\n", og, ibu, srm);
 
-        // 2. [Brewhouse & Fermentation Logs]
+
+        // brew stats
+        FermentationEngine tempFermEngine = new FermentationEngine();
+        double targetFG = tempFermEngine.calculateFG(recipe, og, recipe.getYeastItem().yeast().maxTemp(), 65.0);
+        double estABV = tempFermEngine.calculateABV(og, targetFG);
+
+        // 1.0에 가까울수록 씀, 0.5 이하면 몰티함
+        double gravityUnits = (og > 1.0) ? (og - 1.0) * 1000.0 : 0.0;
+        double buGuRatio = (gravityUnits > 0) ? (ibu / gravityUnits) : 0.0;
+
+        double totalDryHops = dryHopAdditions.stream().mapToDouble(DryHopAddition::amountGrams).sum();
+        double dryHopRate = totalDryHops / recipe.getBatchSizeLiters(); // 리터당 드라이 홉 투입량
+        double pitchRate = recipe.getYeastItem().amount() / recipe.getBatchSizeLiters(); // 리터당 효모 투입량
+
+        System.out.println("\n[Advanced Brew Stats]");
+        System.out.printf(" 추정 FG  : %.4f\n", targetFG);
+        System.out.printf(" 추정 ABV : %.1f%%\n", estABV);
+        System.out.printf(" BU:GU 비율 : %.2f ", buGuRatio);
+
+        if (buGuRatio > 0.8) System.out.println("(Very Bitter / Hoppy)");
+        else if (buGuRatio > 0.5) System.out.println("(Balanced)");
+        else System.out.println("(Malty / Sweet)");
+
+        /**
+         * 권장 dry hop rate ===
+         * 라거 위트 스타우트 0~2g/l
+         * 페일에일 2~4g/l
+         * 웨코 5~8
+         * 뉴잉 10~20+
+         *
+         * 권장 pitch rate ===
+         * 에일(og 1.06 이하) 0.5~0.8g/l
+         * PA, IPA, 스타우트, 임스, DIPA 1.0~1.2g/l // 당분이 너무 많아 효모가 삼투압 스트레스를 받으므로, 평소의 1.5배~2배를 투입해야 발효가 중간에 멈추지 않습니다.
+         * 일반 라거 1.0~1.5
+         * 필스너, 헬레스, 도펠복, 발틱포터 1.5~2.0
+         *
+         */
+        System.out.printf(" Dry Hop Rate: %.1f g/L (Total: %.1f g)\n", dryHopRate, totalDryHops);
+        System.out.printf(" Pitch Rate  : %.2f g/L\n", pitchRate);
+
+
+
         System.out.println("\n" + "-".repeat(90));
 //        System.out.println(String.format("%-14s | %-7s | %-7s | %-5s | %-25s | %-25s",
 //                "Timeline", "Temp", "Gravity", "ABV", "Phase/Event", "Flavor Tags"));

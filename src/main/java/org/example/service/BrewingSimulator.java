@@ -17,6 +17,7 @@ public class BrewingSimulator {
     private final BrewCalculator calculator = new BrewCalculator();
     private final FermentationEngine fermentationEngine = new FermentationEngine();
     private final DensityEngine densityEngine = new DensityEngine();
+    private final HopChemistryEngine hopChemistryEngine = new HopChemistryEngine();
 
     /**
      * 시뮬레이션 메인 메서드
@@ -42,16 +43,34 @@ public class BrewingSimulator {
 
         List<String> dryHopTags = new ArrayList<>();
 
+        double dynamicFG = targetFG;
+        double dynamicIBU = calculator.calculateIBU(recipe);
+        double currentDiacetyl = 0;
+
+
         for (int hour = 0; hour <= totalHours; hour++) {
             double currentTemp = tempSchedule.getTempAt(hour);
 
             // 비중
             double drop = calculateHourlyDrop(hour, currentGravity, targetFG, currentTemp, recipe.getYeastItem().yeast());
+            if (drop < 0) drop = 0;
+            currentGravity -= drop;
+
+            double currentABV = fermentationEngine.calculateABV(startOG, currentGravity);
 
             // 드라이호핑
             for(DryHopAddition dryHopAddition : dryHopAdditions){
                 if(dryHopAddition.hour() == hour)
                 {
+                    double gramsPerLiter = dryHopAddition.amountGrams() / recipe.getBatchSizeLiters();
+                    double addedIbu = hopChemistryEngine.calculateHumulinoneIBU(gramsPerLiter, currentABV);
+                    double fgDrop = hopChemistryEngine.calculateHopCreepDrop(gramsPerLiter, currentGravity);
+
+                    dynamicIBU += addedIbu;
+                    dynamicFG -= fgDrop;
+                    currentDiacetyl += 25.0;
+
+                    /*
                     logs.add(new SimulationLog(
                             hour, currentTemp, currentGravity,
                             fermentationEngine.calculateABV(startOG, currentGravity),
@@ -61,9 +80,26 @@ public class BrewingSimulator {
                             0, 0
                     ));
 
-                    dryHopTags.addAll(dryHopAddition.hop().flavorTags());
+                     */
 
+                    logs.add(new SimulationLog(
+                            hour, currentTemp, currentGravity, currentABV,
+                            //"Event: Dry Hop Added",
+                            "Hop Addition: " + dryHopAddition.hop().name(),
+                            List.of(String.format("+%.1fg %s (IBU +%.2f, TargetFG -%.4f)",
+                                    dryHopAddition.amountGrams(), dryHopAddition.hop().name(), addedIbu, fgDrop)),
+                            0, 0
+                    ));
+
+
+                    dryHopTags.addAll(dryHopAddition.hop().flavorTags());
                 }
+            }
+
+            if (currentDiacetyl > 0) {
+                double reduction = hopChemistryEngine.calculateDiacetylReduction(currentDiacetyl, currentTemp);
+                currentDiacetyl -= reduction;
+
             }
 
             if (drop < 0) drop = 0;
@@ -75,7 +111,7 @@ public class BrewingSimulator {
             // 혹시라도 비중이 시작점보다 높아질까봐 엔트로피 보정
             if (currentGravity > startOG) currentGravity = startOG;
 
-            double currentABV = fermentationEngine.calculateABV(startOG, currentGravity);
+            //double currentABV = fermentationEngine.calculateABV(startOG, currentGravity);
 
             //phase = determinePhase(hour, currentGravity, startOG, targetFG, currentTemp);
 
@@ -134,30 +170,31 @@ public class BrewingSimulator {
         double remainingSugar = currentG - targetFG;
         if (remainingSugar <= 0.0001) return 0.0;
 
-        // 1. 적응기 (Lag Phase): 0~12시간 (실제로는 미세하게 시작됨)
         if (hour < 12) return 0.0002;
 
-        // 2. Q10 온도 활성도 (기존 유지하되 감도 조정)
+        //Q10 온도 활성도
         double baseTemp = 20.0;
-        double q10 = 2.5; // 효모의 온도 민감도를 조금 더 높임
+        double q10 = 2.5;
         double tempActivity = Math.pow(q10, (temp - baseTemp) / 10.0);
 
-        // 3. 효모 생존 한계 페널티
+        // 효모 생존 한계 패널티
         if (temp < yeast.minTemp()) {
-            tempActivity *= 0.15; // 권장 온도 미만 시 활동 급감
+            tempActivity *= 0.15;
         } else if (temp > yeast.maxTemp() + 5) {
-            tempActivity = 0.0; // 사멸
+            tempActivity = 0.0;
         }
 
-        // 4. [핵심 수정] 반응 속도 상수 (k) 상향
-        // 실제 발효 속도를 반영하기 위해 기존보다 4~5배 상향 조정
         double reactionConstant;
-        if (hour < 96) {
-            // 왕성한 발효기 (Log Phase)
-            reactionConstant = 0.025;
+
+        if(hour <24) // 효모증식기
+        {
+            reactionConstant = 0.003;
+        }
+        else if (hour < 120) { // 하루에 약 0.008 ~ 0.012 정도씩 꾸준히 떨어지도록 세팅하면 될 듯
+            //reactionConstant = 0.025;
+            reactionConstant = 0.01;
         } else {
-            // 안정기 (Stationary Phase)
-            reactionConstant = 0.008;
+            reactionConstant = 0.003;
         }
 
         // dG/dt = k * (G - G_target) * Activity
